@@ -1,0 +1,24 @@
+<!-- مساعد Pyilot الذكي -->
+<% if (session && session.userId) { %>
+<div class="pilot-bubble" id="pilotBubble" onclick="togglePilot()">
+  <span class="pilot-emoji">🤖</span>
+  <span class="pilot-label">Pyilot</span>
+</div>
+<div class="pilot-panel" id="pilotPanel">
+  <div class="pilot-header">
+    <span>🤖 مساعد Pyilot</span>
+    <button onclick="togglePilot()" class="close-btn">✕</button>
+  </div>
+  <div class="pilot-messages" id="pilotMessages">
+    <div class="pilot-msg bot">أهلاً! أنا Pyilot 🐍 مساعدك في تعلم البرمجة. كيف أساعدك اليوم؟</div>
+  </div>
+  <div class="pilot-input-row">
+    <input type="text" id="pilotInput" placeholder="اسألني أي شيء..." onkeydown="if(event.key==='Enter')sendPilot()">
+    <button onclick="sendPilot()" class="send-btn">➤</button>
+  </div>
+</div>
+<% } %>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

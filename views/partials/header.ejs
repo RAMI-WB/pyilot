@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | Pyilot 🐍</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<% if (session && session.userId) { %>
+<nav class="topbar">
+  <div class="topbar-inner">
+    <a href="/" class="logo">🐍 Pyilot</a>
+    <div class="topbar-stats">
+      <div class="stat-badge streak">
+        <span class="stat-icon">🔥</span>
+        <span class="stat-val" id="streak-val"><%= locals.user ? user.streak : 0 %></span>
+      </div>
+      <div class="stat-badge coins">
+        <span class="stat-icon">💎</span>
+        <span class="stat-val" id="coins-val"><%= locals.user ? user.coins : 0 %></span>
+      </div>
+      <% if (locals.user && user.is_pro) { %>
+        <div class="stat-badge pro"><span>PRO ⚡</span></div>
+      <% } %>
+      <a href="/profile" class="avatar-btn"><%= locals.user ? user.username.charAt(0).toUpperCase() : 'م' %></a>
+    </div>
+  </div>
+</nav>
+<% } %>

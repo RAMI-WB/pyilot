@@ -1,0 +1,32 @@
+<%- include('partials/header') %>
+
+<main class="profile-main">
+  <div class="profile-card">
+    <div class="profile-avatar"><%= user.username.charAt(0).toUpperCase() %></div>
+    <h2 class="profile-name"><%= user.username %></h2>
+    <p class="profile-email"><%= user.email %></p>
+    <% if (user.is_pro) { %><div class="pro-badge">⚡ PRO</div><% } %>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-big">🔥 <%= user.streak %></div>
+        <div class="stat-lbl">أيام متتالية</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-big">💎 <%= user.coins %></div>
+        <div class="stat-lbl">نقاط مكتسبة</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-big">📘 <%= stats.completed %></div>
+        <div class="stat-lbl">درس مكتمل</div>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <a href="/" class="btn-primary">العودة للتعلم 🗺️</a>
+      <a href="/logout" class="btn-outline">تسجيل الخروج</a>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

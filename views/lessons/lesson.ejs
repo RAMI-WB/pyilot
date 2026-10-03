@@ -1,0 +1,192 @@
+<%- include('../partials/header') %>
+
+<main class="lesson-main">
+  <!-- شريط التقدم -->
+  <div class="lesson-topbar">
+    <a href="/" class="back-btn">← العودة</a>
+    <div class="lesson-progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="lesson-hearts">❤️ ❤️ ❤️</div>
+  </div>
+
+  <div class="lesson-container">
+    <h2 class="lesson-title"><%= lesson.title %></h2>
+
+    <!-- منطقة الأسئلة -->
+    <div id="questionArea">
+      <!-- تُملأ ديناميكياً بـ JS -->
+    </div>
+
+    <!-- زر التقدم -->
+    <div class="lesson-actions">
+      <button id="checkBtn" class="btn-check" onclick="checkAnswer()">تحقق ✓</button>
+      <button id="nextBtn" class="btn-next hidden" onclick="nextQuestion()">التالي ←</button>
+    </div>
+
+    <!-- ردود الفعل -->
+    <div id="feedback" class="feedback-box hidden"></div>
+  </div>
+
+  <!-- نافذة الانتهاء -->
+  <div id="completionModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-emoji">🎉</div>
+      <h2>أحسنت!</h2>
+      <p>أكملت درس "<%= lesson.title %>"</p>
+      <div class="stars-display" id="finalStars"></div>
+      <div class="xp-earned" id="xpEarned">+<%= lesson.xp_reward %> 💎</div>
+      <button onclick="window.location='/'" class="btn-primary">العودة للخريطة 🗺️</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const lessonData = <%- JSON.stringify(lesson.content) %>;
+const lessonId = <%= lesson.id %>;
+const lessonXP = <%= lesson.xp_reward %>;
+let currentQ = 0;
+let correctAnswers = 0;
+let hearts = 3;
+const questions = lessonData.questions || [];
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  if (!q) return finishLesson();
+
+  const area = document.getElementById('questionArea');
+  const pct = Math.round((currentQ / questions.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('checkBtn').classList.remove('hidden');
+  document.getElementById('nextBtn').classList.add('hidden');
+  document.getElementById('feedback').classList.add('hidden');
+
+  if (q.type === 'choice') {
+    area.innerHTML = `
+      <div class="question-card">
+        <div class="q-num">سؤال ${currentQ + 1} من ${questions.length}</div>
+        <div class="q-text">${q.question}</div>
+        <div class="options-grid" id="optionsGrid">
+          ${q.options.map((opt, i) => `
+            <button class="option-btn" onclick="selectOption(this, ${i})" data-index="${i}">
+              ${opt}
+            </button>
+          `).join('')}
+        </div>
+      </div>`;
+  } else if (q.type === 'code') {
+    area.innerHTML = `
+      <div class="question-card">
+        <div class="q-num">سؤال ${currentQ + 1} من ${questions.length} · 💻 تمرين كود</div>
+        <div class="q-text">${q.question}</div>
+        <% if (typeof q !== 'undefined') { %>
+        <% } %>
+        <div class="code-editor-wrapper">
+          <div class="editor-header">
+            <span>🐍 Python</span>
+            <button onclick="runCode()" class="run-btn">▶ تشغيل</button>
+          </div>
+          <textarea id="codeEditor" class="code-editor" spellcheck="false">${q.starterCode || ''}</textarea>
+          <div class="output-area" id="codeOutput">// النتيجة ستظهر هنا...</div>
+        </div>
+        ${q.hint ? `<button class="hint-btn" onclick="showHint('${q.hint.replace(/'/g,"\\'")}')">💡 تلميح</button>` : ''}
+      </div>`;
+  }
+}
+
+let selectedOpt = null;
+function selectOption(el, idx) {
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedOpt = idx;
+}
+
+function checkAnswer() {
+  const q = questions[currentQ];
+  const feedback = document.getElementById('feedback');
+  feedback.classList.remove('hidden', 'correct', 'wrong');
+
+  if (q.type === 'choice') {
+    if (selectedOpt === null) { feedback.innerHTML = '⚠️ اختر إجابة أولاً'; feedback.classList.add('hidden'); return; }
+    if (selectedOpt === q.answer) {
+      correctAnswers++;
+      feedback.innerHTML = `✅ <strong>صحيح!</strong> ${q.explanation}`;
+      feedback.classList.add('correct');
+      document.querySelectorAll('.option-btn')[selectedOpt].classList.add('correct-opt');
+    } else {
+      hearts--;
+      updateHearts();
+      feedback.innerHTML = `❌ <strong>خطأ.</strong> ${q.explanation}`;
+      feedback.classList.add('wrong');
+      document.querySelectorAll('.option-btn')[selectedOpt].classList.add('wrong-opt');
+      document.querySelectorAll('.option-btn')[q.answer].classList.add('correct-opt');
+    }
+  } else if (q.type === 'code') {
+    correctAnswers++;
+    feedback.innerHTML = `✅ <strong>رائع!</strong> واصل التجربة والتشغيل.`;
+    feedback.classList.add('correct');
+  }
+
+  selectedOpt = null;
+  document.getElementById('checkBtn').classList.add('hidden');
+  document.getElementById('nextBtn').classList.remove('hidden');
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) finishLesson();
+  else renderQuestion();
+}
+
+async function runCode() {
+  const code = document.getElementById('codeEditor').value;
+  const output = document.getElementById('codeOutput');
+  output.textContent = '⏳ جاري التشغيل...';
+  try {
+    const res = await fetch('/api/run-code', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    output.textContent = data.output || '(لا مخرجات)';
+  } catch { output.textContent = 'خطأ في الاتصال'; }
+}
+
+function showHint(hint) {
+  const fb = document.getElementById('feedback');
+  fb.innerHTML = `💡 <strong>تلميح:</strong> ${hint}`;
+  fb.classList.remove('hidden', 'correct', 'wrong');
+  fb.classList.add('hint');
+}
+
+function updateHearts() {
+  const heartsEl = document.querySelector('.lesson-hearts');
+  const h = ['❤️', '❤️', '❤️'];
+  for (let i = 3; i > hearts; i--) h[i-1] = '🖤';
+  heartsEl.textContent = h.join(' ');
+  if (hearts <= 0) setTimeout(() => { alert('انتهت قلوبك! حاول مرة أخرى 💪'); window.location='/'; }, 500);
+}
+
+async function finishLesson() {
+  document.getElementById('progressFill').style.width = '100%';
+  const stars = correctAnswers >= questions.length ? 3 : correctAnswers >= Math.ceil(questions.length * 0.7) ? 2 : 1;
+  const modal = document.getElementById('completionModal');
+  document.getElementById('finalStars').innerHTML = [...Array(3)].map((_,i) => `<span style="font-size:2rem">${i < stars ? '⭐' : '☆'}</span>`).join('');
+
+  const res = await fetch(`/api/lesson/${lessonId}/complete`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ stars, xp: lessonXP })
+  });
+  const data = await res.json();
+  if (data.success) {
+    document.getElementById('coins-val') && (document.getElementById('coins-val').textContent = data.coins);
+    document.getElementById('xpEarned').textContent = `+${data.xpEarned} 💎`;
+  }
+  modal.classList.remove('hidden');
+}
+
+// بدء الدرس
+renderQuestion();
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,68 @@
+<%- include('partials/header') %>
+
+<main class="dashboard-main">
+  <div class="dashboard-hero">
+    <div class="hero-text">
+      <h1>أهلاً، <span class="username-highlight"><%= user.username %></span> 👋</h1>
+      <p>واصل رحلتك في البرمجة اليوم</p>
+    </div>
+    <div class="streak-card">
+      <div class="streak-num">🔥 <%= user.streak %></div>
+      <div class="streak-label">أيام متتالية</div>
+    </div>
+  </div>
+
+  <div class="skill-tree-container">
+    <% let unitNames = { 1: 'وحدة ١: البداية مع Python', 2: 'وحدة ٢: التحكم في البرنامج', 3: 'وحدة ٣: البيانات والهياكل' }; %>
+    <% let unitColors = { 1: 'unit-green', 2: 'unit-blue', 3: 'unit-purple' }; %>
+
+    <% Object.keys(units).forEach(unitNum => { %>
+    <div class="unit-section">
+      <div class="unit-header <%= unitColors[unitNum] %>">
+        <span class="unit-icon">
+          <% if(unitNum == 1) { %>🌱<% } else if(unitNum == 2) { %>⚡<% } else { %>🏗️<% } %>
+        </span>
+        <span class="unit-title"><%= unitNames[unitNum] || 'وحدة ' + unitNum %></span>
+      </div>
+
+      <div class="lessons-track">
+        <% units[unitNum].lessons.forEach((lesson, i) => { %>
+        <%
+          const completed = lesson.progress.completed;
+          const stars = lesson.progress.stars || 0;
+          // الدرس مفتوح إذا كان أول درس أو الدرس السابق مكتمل
+          const prevLesson = i > 0 ? units[unitNum].lessons[i-1] : null;
+          const isLocked = i > 0 && !prevLesson.progress.completed;
+          const nodeClass = completed ? 'node-done' : (isLocked ? 'node-locked' : 'node-active');
+        %>
+        <div class="lesson-node-wrapper <%= i % 2 === 0 ? 'align-right' : 'align-left' %>">
+          <% if (isLocked) { %>
+            <div class="lesson-node <%= nodeClass %>">
+              <span class="node-icon">🔒</span>
+            </div>
+          <% } else { %>
+            <a href="/lesson/<%= lesson.id %>" class="lesson-node <%= nodeClass %>">
+              <span class="node-icon">
+                <% if (completed) { %>✅<% } else { %>📘<% } %>
+              </span>
+              <% if (completed && stars > 0) { %>
+              <div class="stars-row">
+                <% for(let s=0; s<3; s++) { %><span class="<%= s < stars ? 'star-filled' : 'star-empty' %>">★</span><% } %>
+              </div>
+              <% } %>
+            </a>
+          <% } %>
+          <div class="lesson-label"><%= lesson.title %></div>
+          <div class="lesson-xp">+<%= lesson.xp_reward %> 💎</div>
+        </div>
+        <% if (i < units[unitNum].lessons.length - 1) { %>
+        <div class="track-connector"></div>
+        <% } %>
+        <% }) %>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+</main>
+
+<%- include('partials/footer') %>
